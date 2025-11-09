@@ -13,7 +13,7 @@ const io = socketIo(server, {
   }
 });
 
-const PORT = process.env.PORT || 666;
+const PORT = process.env.PORT || 1212;
 
 // Middleware
 app.use(cors());
