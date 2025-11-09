@@ -254,7 +254,7 @@ app.get('/documentation', (req, res) => {
     const markdown = fs.readFileSync(markdownPath, 'utf8');
 
     // Convert markdown to HTML
-    const contentHtml = marked(markdown);
+    const contentHtml = marked.parse(markdown);
 
     // Create the full HTML page
     const html = `
