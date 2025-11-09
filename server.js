@@ -101,6 +101,15 @@ function requireApiKey(req, res, next) {
 
   if (!apiKey) {
     console.warn(`[AUTH] Missing API key from IP: ${req.ip}`);
+
+    // Emit failed authentication event
+    io.emit('auth-attempt', {
+      success: false,
+      reason: 'Missing API key',
+      ip: req.ip,
+      timestamp: new Date().toISOString()
+    });
+
     return res.status(401).json({
       success: false,
       error: 'API key required. Include X-API-Key header in your request.'
@@ -108,17 +117,40 @@ function requireApiKey(req, res, next) {
   }
 
   // Dynamically reload keys to include newly added ones
+  const allKeyObjects = loadApiKeys();
   const currentKeys = getAllApiKeys();
 
   if (!currentKeys.includes(apiKey)) {
     console.warn(`[AUTH] Invalid API key attempt from IP: ${req.ip}`);
+
+    // Emit failed authentication event
+    io.emit('auth-attempt', {
+      success: false,
+      reason: 'Invalid API key',
+      ip: req.ip,
+      timestamp: new Date().toISOString()
+    });
+
     return res.status(401).json({
       success: false,
       error: 'Invalid API key'
     });
   }
 
-  console.log(`[AUTH] Authenticated request from IP: ${req.ip}`);
+  // Find the device name for this API key
+  const keyObject = allKeyObjects.find(k => k.key === apiKey);
+  const deviceName = keyObject ? keyObject.name : 'Unknown Device';
+
+  console.log(`[AUTH] Authenticated request from IP: ${req.ip}, Device: ${deviceName}`);
+
+  // Emit successful authentication event
+  io.emit('auth-attempt', {
+    success: true,
+    deviceName: deviceName,
+    ip: req.ip,
+    timestamp: new Date().toISOString()
+  });
+
   next();
 }
 
@@ -432,9 +464,102 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Serve the API key management page
+// Serve the API keys list page (no auth required)
+app.get('/keys', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'keys.html'));
+});
+
+// Serve the old admin/keys page (redirect to new location)
 app.get('/admin/keys', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin-keys.html'));
+  res.redirect('/keys');
+});
+
+// Serve the setup page for adding new API keys
+app.get('/setup', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'setup.html'));
+});
+
+// API endpoint to list all keys (no authentication required)
+app.get('/api/keys/list', (req, res) => {
+  const fileKeys = loadApiKeys();
+
+  res.json({
+    success: true,
+    keys: fileKeys
+  });
+});
+
+// API endpoint to delete a key (no authentication required for now)
+app.delete('/api/keys/:keyId', (req, res) => {
+  const { keyId } = req.params;
+  const fileKeys = loadApiKeys();
+
+  const keyIndex = fileKeys.findIndex(k => k.id === keyId);
+
+  if (keyIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      error: 'API key not found'
+    });
+  }
+
+  fileKeys.splice(keyIndex, 1);
+
+  if (saveApiKeys(fileKeys)) {
+    res.json({
+      success: true,
+      message: 'API key deleted successfully'
+    });
+  } else {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete API key'
+    });
+  }
+});
+
+// API endpoint for setup - generate key without authentication
+app.post('/api/setup/generate-key', (req, res) => {
+  const { name, key } = req.body;
+
+  if (!name || !key) {
+    return res.status(400).json({
+      success: false,
+      error: 'Name and key are required'
+    });
+  }
+
+  // Validate key format (should be 64 hex characters)
+  if (!/^[0-9a-f]{64}$/i.test(key)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid key format'
+    });
+  }
+
+  const fileKeys = loadApiKeys();
+
+  const newKeyEntry = {
+    id: crypto.randomBytes(16).toString('hex'),
+    name: name.trim(),
+    key: key.toLowerCase(),
+    createdAt: new Date().toISOString()
+  };
+
+  fileKeys.push(newKeyEntry);
+
+  if (saveApiKeys(fileKeys)) {
+    res.json({
+      success: true,
+      message: 'API key saved successfully',
+      keyId: newKeyEntry.id
+    });
+  } else {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to save API key'
+    });
+  }
 });
 
 // Serve the documentation page with server-side markdown rendering

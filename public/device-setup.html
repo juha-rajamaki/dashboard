@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Configuration - YouTube Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            color: #667eea;
+            font-size: 1.8em;
+        }
+
+        .back-link {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+
+        .back-link:hover {
+            background: #5568d3;
+        }
+
+        .panel {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .panel h2 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .config-section {
+            margin-bottom: 30px;
+        }
+
+        .config-section h3 {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        .config-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .config-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .config-value {
+            background: white;
+            padding: 12px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            color: #333;
+            border: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copy-btn-small {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .copy-btn-small:hover {
+            background: #5568d3;
+        }
+
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .note strong {
+            color: #856404;
+        }
+
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+        }
+
+        .steps li {
+            counter-increment: step-counter;
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 20px;
+        }
+
+        .steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 28px;
+            height: 28px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .example-image {
+            max-width: 100%;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📱 Device Configuration</h1>
+            <a href="/" class="back-link">← Back to Dashboard</a>
+        </header>
+
+        <div class="panel">
+            <h2>How to Connect Your Device</h2>
+
+            <div class="note">
+                <strong>⚠️ Important:</strong> Before configuring your device, make sure you have generated an API key at <a href="/keys" style="color: #667eea; font-weight: bold;">/keys</a>
+            </div>
+
+            <div class="config-section">
+                <h3>Configuration Values</h3>
+
+                <div class="config-item">
+                    <span class="config-label">WebSocket URL</span>
+                    <div class="config-value">
+                        <span id="wsUrl">ws://loading...</span>
+                        <button class="copy-btn-small" onclick="copyValue('wsUrl')">📋 Copy</button>
+                    </div>
+                </div>
+
+                <div class="config-item">
+                    <span class="config-label">API Key</span>
+                    <div class="config-value">
+                        <span style="flex: 1;">Get from <a href="/keys" style="color: #667eea;">Keys page</a></span>
+                    </div>
+                </div>
+
+                <div class="config-item">
+                    <span class="config-label">API Key Header Name</span>
+                    <div class="config-value">
+                        <span>X-API-Key</span>
+                        <button class="copy-btn-small" onclick="copyText('X-API-Key')">📋 Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <h3>Step-by-Step Setup</h3>
+                <ol class="steps">
+                    <li>
+                        <strong>Generate an API Key</strong><br>
+                        Go to <a href="/keys" style="color: #667eea;">Keys page</a>, enter your device name (e.g., "Living Room Light"), and click "Generate API Key". Copy the generated key.
+                    </li>
+                    <li>
+                        <strong>Open Your Device Settings</strong><br>
+                        Navigate to the device configuration or "Add New Device" screen in your device's app.
+                    </li>
+                    <li>
+                        <strong>Enter Device Name</strong><br>
+                        Give your device a friendly name (e.g., "Living Room Light", "Bedroom TV")
+                    </li>
+                    <li>
+                        <strong>Enter WebSocket URL</strong><br>
+                        Copy the WebSocket URL shown above and paste it into the "WebSocket URL" field.
+                    </li>
+                    <li>
+                        <strong>Enter API Key</strong><br>
+                        Paste the API key you generated in step 1 into the "API Key" field.
+                    </li>
+                    <li>
+                        <strong>Set API Key Header Name</strong><br>
+                        Enter <code>X-API-Key</code> in the "API Key Header Name" field (if not already set).
+                    </li>
+                    <li>
+                        <strong>Save and Connect</strong><br>
+                        Click "Add Device" or "Save" to complete the setup. Your device should now be connected!
+                    </li>
+                </ol>
+            </div>
+
+            <div class="config-section">
+                <h3>Example Configuration</h3>
+                <div class="config-item">
+                    <strong>Device Name:</strong> Living Room Light<br>
+                    <strong>WebSocket URL:</strong> <span id="exampleWsUrl">ws://172.31.94.122:1212</span><br>
+                    <strong>API Key:</strong> 487b3fd7a7504510fcf7014e6c61eaa1b8d7e02a9a8ae27d94c03e6c37925a19<br>
+                    <strong>API Key Header Name:</strong> X-API-Key
+                </div>
+            </div>
+
+            <div class="config-section">
+                <h3>Troubleshooting</h3>
+                <ul style="line-height: 2; margin-left: 20px;">
+                    <li><strong>Connection Failed:</strong> Make sure the server is running and accessible from your device's network</li>
+                    <li><strong>Authentication Error:</strong> Verify your API key is correct and hasn't been deleted</li>
+                    <li><strong>Wrong URL:</strong> If your device is on a different machine, use your server's IP address instead of localhost</li>
+                    <li><strong>Firewall Issues:</strong> Ensure port 1212 is open in your firewall</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+    </div>
+
+    <script>
+        // Get server details
+        window.addEventListener('DOMContentLoaded', () => {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            const wsUrl = `${protocol}//${host}`;
+
+            document.getElementById('wsUrl').textContent = wsUrl;
+            document.getElementById('exampleWsUrl').textContent = wsUrl;
+        });
+
+        // Copy value from element
+        function copyValue(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            copyText(text);
+        }
+
+        // Copy text to clipboard
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showAlert('Copied to clipboard!');
+            }).catch(err => {
+                showAlert('Failed to copy', true);
+            });
+        }
+
+        // Show alert
+        function showAlert(message, isError = false) {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `<div class="alert alert-success show">${message}</div>`;
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

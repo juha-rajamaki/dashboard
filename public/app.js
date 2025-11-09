@@ -692,6 +692,74 @@ function setupToggleButtons() {
     });
 }
 
+// Toast notification system
+function showToast(title, message, type = 'success', duration = 5000) {
+    const toastContainer = document.getElementById('toastContainer');
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    // Choose icon based on type
+    let icon = '';
+    if (type === 'success') {
+        icon = '✓';
+    } else if (type === 'error') {
+        icon = '✕';
+    } else if (type === 'warning') {
+        icon = '⚠';
+    } else {
+        icon = 'ℹ';
+    }
+
+    toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close">×</button>
+    `;
+
+    toastContainer.appendChild(toast);
+
+    // Close button functionality
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn.addEventListener('click', () => {
+        removeToast(toast);
+    });
+
+    // Auto-remove after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            removeToast(toast);
+        }, duration);
+    }
+}
+
+function removeToast(toast) {
+    toast.classList.add('hiding');
+    setTimeout(() => {
+        toast.remove();
+    }, 300); // Match animation duration
+}
+
+// Listen for authentication events
+socket.on('auth-attempt', (data) => {
+    if (data.success) {
+        showToast(
+            'Device Connected',
+            `${data.deviceName} authenticated successfully`,
+            'success'
+        );
+    } else {
+        showToast(
+            'Authentication Failed',
+            `${data.reason} from ${data.ip}`,
+            'error'
+        );
+    }
+});
+
 // Initialize
 loadYouTubeAPI();
 loadHistory();

@@ -13,7 +13,7 @@
             <div class="header-right">
                 <a href="/documentation" class="doc-link" target="_blank">📖 Docs</a>
                 <a href="/api-docs" class="doc-link" target="_blank">⚙️ API</a>
-                <a href="/admin/keys" class="doc-link">🔐 Keys</a>
+                <a href="/keys" class="doc-link">🔐 Keys</a>
                 <div class="status">
                     <span class="status-indicator" id="statusIndicator"></span>
                     <span id="statusText">Connecting...</span>
@@ -114,6 +114,9 @@
             </div>
         </main>
     </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script src="app.js"></script>
