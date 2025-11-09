@@ -5,11 +5,11 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log('Keys page loaded');
     loadKeys();
 
-    // Set WebSocket URL
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Set Server URL (Socket.io uses HTTP/HTTPS, not WS/WSS)
+    const protocol = window.location.protocol; // http: or https:
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}`;
-    document.getElementById('wsUrl').textContent = wsUrl;
+    const serverUrl = `${protocol}//${host}`;
+    document.getElementById('serverUrl').textContent = serverUrl;
 
     // Add event listeners
     const generateBtn = document.getElementById('generateBtn');
@@ -112,6 +112,7 @@ function displayKeys(keys) {
             <div class="key-value-row">
                 <div class="key-value">${escapeHtml(key.key)}</div>
                 <button class="copy-btn" data-key="${escapeHtml(key.key)}">📋 Copy</button>
+                <button class="rename-btn" data-key-id="${escapeHtml(key.id)}" data-key-name="${escapeHtml(key.name)}">✏️ Rename</button>
                 <button class="delete-btn" data-key-id="${escapeHtml(key.id)}" data-key-name="${escapeHtml(key.name)}">🗑️ Delete</button>
             </div>
             ${key.createdAt ? `<div class="key-meta">Created: ${new Date(key.createdAt).toLocaleString()}</div>` : ''}
@@ -126,6 +127,15 @@ function displayKeys(keys) {
         });
     });
 
+    // Add rename button event listeners
+    document.querySelectorAll('.rename-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const keyId = this.getAttribute('data-key-id');
+            const keyName = this.getAttribute('data-key-name');
+            renameKey(keyId, keyName);
+        });
+    });
+
     // Add delete button event listeners
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -134,6 +144,44 @@ function displayKeys(keys) {
             deleteKey(keyId, keyName);
         });
     });
+}
+
+// Rename an API key
+async function renameKey(keyId, currentName) {
+    const newName = prompt(`Enter new name for "${currentName}":`, currentName);
+
+    if (!newName || newName.trim() === '') {
+        return;
+    }
+
+    if (newName.trim() === currentName) {
+        showAlert('listAlertContainer', 'error', 'New name is the same as current name');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/keys/${keyId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: newName.trim()
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showAlert('listAlertContainer', 'success', 'API key renamed successfully');
+            loadKeys();
+        } else {
+            showAlert('listAlertContainer', 'error', result.error || 'Failed to rename key');
+        }
+    } catch (error) {
+        console.error('Rename error:', error);
+        showAlert('listAlertContainer', 'error', 'Error renaming key: ' + error.message);
+    }
 }
 
 // Delete an API key

@@ -36,12 +36,15 @@ function loadYouTubeAPI() {
 
 // Called automatically when YouTube API is ready
 function onYouTubeIframeAPIReady() {
+    // Load controls preference from localStorage (default: true)
+    const showControls = localStorage.getItem('ytControlsEnabled') !== 'false';
+
     player = new YT.Player('player', {
         height: '100%',
         width: '100%',
         playerVars: {
             autoplay: 1,
-            controls: 1,
+            controls: showControls ? 1 : 0,
             modestbranding: 1,
             rel: 0
         },
@@ -101,12 +104,29 @@ function onPlayerStateChange(event) {
             console.log('Set video quality to:', selectedQuality);
             qualitySetForCurrentVideo = true;
 
-            // Update title in current video display after quality is set
+            // Update title in current video display and history after quality is set
             setTimeout(() => {
                 const title = getVideoTitle();
+                const currentUrl = player.getVideoUrl();
+
                 if (title && currentUrlElement) {
-                    currentUrlElement.setAttribute('data-url', currentUrlElement.textContent);
+                    currentUrlElement.setAttribute('data-url', currentUrl || currentUrlElement.textContent);
                     currentUrlElement.textContent = title;
+                }
+
+                // Update the most recent history entry with the actual title
+                if (title && currentUrl && videoHistory.length > 0) {
+                    const videoId = extractVideoId(currentUrl);
+                    if (videoId) {
+                        // Find the most recent entry with this video ID
+                        const historyEntry = videoHistory.find(item => item.videoId === videoId);
+                        if (historyEntry && historyEntry.title === 'YouTube Video') {
+                            historyEntry.title = title;
+                            saveHistory();
+                            renderHistory();
+                            console.log('Updated history entry with title:', title);
+                        }
+                    }
                 }
             }, 500);
 
@@ -471,30 +491,23 @@ socket.on('control-stop', () => {
 
 socket.on('control-fullscreen', () => {
     console.log('Received fullscreen command from API');
-    if (!videoContainer) return;
 
-    if (!document.fullscreenElement) {
-        if (videoContainer.requestFullscreen) {
-            videoContainer.requestFullscreen();
-        } else if (videoContainer.webkitRequestFullscreen) {
-            videoContainer.webkitRequestFullscreen();
-        } else if (videoContainer.msRequestFullscreen) {
-            videoContainer.msRequestFullscreen();
-        }
+    // Use CSS-based "fake fullscreen" (workaround for browser security restrictions)
+    if (videoContainer) {
+        videoContainer.classList.add('fake-fullscreen');
+        document.body.classList.add('fake-fullscreen-active');
+        console.log('Entered fake fullscreen mode');
     }
 });
 
 socket.on('control-exitfullscreen', () => {
     console.log('Received exit fullscreen command from API');
 
-    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
+    // Exit CSS-based fake fullscreen
+    if (videoContainer) {
+        videoContainer.classList.remove('fake-fullscreen');
+        document.body.classList.remove('fake-fullscreen-active');
+        console.log('Exited fake fullscreen mode');
     }
 });
 
@@ -547,47 +560,45 @@ testUrl.addEventListener('keypress', (e) => {
 function toggleFullscreen() {
     if (!videoContainer) return;
 
-    if (!document.fullscreenElement) {
-        // Enter fullscreen
-        if (videoContainer.requestFullscreen) {
-            videoContainer.requestFullscreen();
-        } else if (videoContainer.webkitRequestFullscreen) {
-            videoContainer.webkitRequestFullscreen();
-        } else if (videoContainer.msRequestFullscreen) {
-            videoContainer.msRequestFullscreen();
-        }
+    // Use CSS-based "fake fullscreen" (works without user gesture restrictions)
+    const isFakeFullscreen = videoContainer.classList.contains('fake-fullscreen');
+
+    if (!isFakeFullscreen) {
+        // Enter fake fullscreen
+        videoContainer.classList.add('fake-fullscreen');
+        document.body.classList.add('fake-fullscreen-active');
+        console.log('Entered fake fullscreen mode');
     } else {
-        // Exit fullscreen
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
+        // Exit fake fullscreen
+        videoContainer.classList.remove('fake-fullscreen');
+        document.body.classList.remove('fake-fullscreen-active');
+        console.log('Exited fake fullscreen mode');
     }
+
+    // Update button text
+    updateFullscreenButton();
 }
 
-// Update fullscreen button text when fullscreen state changes
+// Update fullscreen button icon when fullscreen state changes
 function updateFullscreenButton() {
     if (!fullscreenBtn) return;
 
-    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+    const isFullscreen = videoContainer && videoContainer.classList.contains('fake-fullscreen');
 
     if (isFullscreen) {
         fullscreenBtn.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
             </svg>
-            Exit Fullscreen
         `;
+        fullscreenBtn.title = 'Exit Fullscreen';
     } else {
         fullscreenBtn.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
             </svg>
-            Fullscreen
         `;
+        fullscreenBtn.title = 'Fullscreen';
     }
 }
 
@@ -760,7 +771,118 @@ socket.on('auth-attempt', (data) => {
     }
 });
 
+// Info panel toggle functionality (history stays visible)
+function setupSidebarToggle() {
+    const toggleSidebarBtn = document.getElementById('toggleSidebar');
+    const infoPanel = document.querySelector('.info-panel');
+
+    if (!toggleSidebarBtn || !infoPanel) return;
+
+    // Load saved state from localStorage (default: hidden)
+    const savedState = localStorage.getItem('infoPanelHidden');
+    const infoPanelHidden = savedState === null ? true : savedState === 'true';
+
+    if (infoPanelHidden) {
+        infoPanel.style.display = 'none';
+        toggleSidebarBtn.classList.add('active');
+    }
+
+    // Toggle info panel visibility (history always visible)
+    toggleSidebarBtn.addEventListener('click', () => {
+        const isHidden = infoPanel.style.display === 'none';
+        infoPanel.style.display = isHidden ? 'block' : 'none';
+        toggleSidebarBtn.classList.toggle('active');
+        localStorage.setItem('infoPanelHidden', !isHidden);
+    });
+}
+
+// YouTube controls toggle functionality
+function setupYTControlsToggle() {
+    const toggleYTControlsBtn = document.getElementById('toggleYTControls');
+
+    if (!toggleYTControlsBtn) return;
+
+    // Load saved state from localStorage (default: true/enabled)
+    const controlsEnabled = localStorage.getItem('ytControlsEnabled') !== 'false';
+
+    // Update button state
+    if (controlsEnabled) {
+        toggleYTControlsBtn.classList.add('active');
+    } else {
+        toggleYTControlsBtn.classList.remove('active');
+    }
+
+    // Toggle YouTube controls
+    toggleYTControlsBtn.addEventListener('click', () => {
+        if (!player || !isPlayerReady) {
+            console.warn('Player not ready yet');
+            return;
+        }
+
+        // Get current video state
+        const currentVideoUrl = player.getVideoUrl();
+        const currentTime = player.getCurrentTime();
+        const playerState = player.getPlayerState();
+
+        // Toggle controls setting
+        const currentSetting = localStorage.getItem('ytControlsEnabled') !== 'false';
+        const newSetting = !currentSetting;
+        localStorage.setItem('ytControlsEnabled', newSetting);
+
+        // Update button state
+        toggleYTControlsBtn.classList.toggle('active');
+
+        // Destroy and recreate player with new controls setting
+        player.destroy();
+        isPlayerReady = false;
+
+        // Recreate player
+        player = new YT.Player('player', {
+            height: '100%',
+            width: '100%',
+            playerVars: {
+                autoplay: 0,
+                controls: newSetting ? 1 : 0,
+                modestbranding: 1,
+                rel: 0,
+                start: Math.floor(currentTime)
+            },
+            events: {
+                onReady: (event) => {
+                    isPlayerReady = true;
+                    console.log('YouTube player recreated with controls:', newSetting);
+
+                    // Extract video ID from URL
+                    if (currentVideoUrl) {
+                        const videoId = extractVideoId(currentVideoUrl);
+                        if (videoId) {
+                            // Load video at the saved time
+                            player.loadVideoById({
+                                videoId: videoId,
+                                startSeconds: currentTime
+                            });
+
+                            // Resume playback if it was playing
+                            if (playerState === YT.PlayerState.PLAYING) {
+                                setTimeout(() => {
+                                    player.playVideo();
+                                }, 500);
+                            }
+                        }
+                    }
+                },
+                onError: onPlayerError,
+                onStateChange: onPlayerStateChange
+            }
+        });
+
+        console.log('YouTube controls toggled to:', newSetting);
+    });
+}
+
 // Initialize
 loadYouTubeAPI();
 loadHistory();
 setupToggleButtons();
+setupSidebarToggle();
+setupYTControlsToggle();

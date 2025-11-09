@@ -12,19 +12,35 @@ const marked = require('marked');
 const app = express();
 const server = http.createServer(app);
 
-// Allowed origins for CORS (defined here for reuse)
-const ALLOWED_ORIGINS = [
-  'http://localhost:1212',
-  'http://127.0.0.1:1212'
-];
+// Function to check if origin is allowed (local network or localhost)
+function isOriginAllowed(origin) {
+  if (!origin) return true; // Allow requests with no origin (mobile apps, Postman, etc.)
+
+  try {
+    const url = new URL(origin);
+    const hostname = url.hostname;
+
+    // Allow localhost and 127.0.0.1 on any port
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return true;
+    }
+
+    // Allow private IP ranges (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+    const ipRegex = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/;
+    if (ipRegex.test(hostname)) {
+      return true;
+    }
+
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
 
 const io = socketIo(server, {
   cors: {
     origin: (origin, callback) => {
-      // Allow requests with no origin
-      if (!origin) return callback(null, true);
-
-      if (ALLOWED_ORIGINS.includes(origin)) {
+      if (isOriginAllowed(origin)) {
         callback(null, true);
       } else {
         console.warn(`Blocked WebSocket connection from: ${origin}`);
@@ -173,10 +189,7 @@ function isValidYouTubeUrl(url) {
 // Middleware
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-
-    if (ALLOWED_ORIGINS.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
       console.warn(`Blocked CORS request from: ${origin}`);
@@ -250,6 +263,116 @@ let connectedClients = 0;
 io.on('connection', (socket) => {
   connectedClients++;
   console.log(`New client connected. Total clients: ${connectedClients}`);
+
+  // Handle control discovery messages
+  socket.on('message', (data) => {
+    try {
+      const message = JSON.parse(data);
+
+      if (message.type === 'get_controls') {
+        console.log('Control discovery request received');
+
+        // Send control definitions
+        const controlsResponse = {
+          type: 'controls',
+          controls: [
+            {
+              id: 'play',
+              name: 'Play YouTube Video',
+              type: 'text',
+              command: 'play',
+              placeholder: 'Enter YouTube URL',
+              description: 'Play a YouTube video by URL'
+            },
+            {
+              id: 'pause',
+              name: 'Pause',
+              type: 'button',
+              command: 'pause',
+              description: 'Pause current video'
+            },
+            {
+              id: 'resume',
+              name: 'Resume',
+              type: 'button',
+              command: 'resume',
+              description: 'Resume playback'
+            },
+            {
+              id: 'stop',
+              name: 'Stop',
+              type: 'button',
+              command: 'stop',
+              description: 'Stop video and clear player'
+            },
+            {
+              id: 'fullscreen',
+              name: 'Fullscreen',
+              type: 'button',
+              command: 'fullscreen',
+              description: 'Enter fullscreen mode'
+            },
+            {
+              id: 'exitfullscreen',
+              name: 'Exit Fullscreen',
+              type: 'button',
+              command: 'exitfullscreen',
+              description: 'Exit fullscreen mode'
+            }
+          ]
+        };
+
+        socket.emit('message', JSON.stringify(controlsResponse));
+        console.log('Control definitions sent');
+      }
+
+      // Handle control commands
+      if (message.type === 'command') {
+        console.log(`Command received: ${message.command}`, message.value);
+
+        switch (message.command) {
+          case 'play':
+            if (message.value && isValidYouTubeUrl(message.value)) {
+              io.emit('play-video', { url: message.value });
+              console.log(`Playing video: ${message.value}`);
+            } else {
+              console.warn('Invalid YouTube URL');
+            }
+            break;
+
+          case 'pause':
+            io.emit('control-pause');
+            console.log('Pausing video');
+            break;
+
+          case 'resume':
+            io.emit('control-resume');
+            console.log('Resuming video');
+            break;
+
+          case 'stop':
+            io.emit('control-stop');
+            console.log('Stopping video');
+            break;
+
+          case 'fullscreen':
+            io.emit('control-fullscreen');
+            console.log('Entering fullscreen');
+            break;
+
+          case 'exitfullscreen':
+            io.emit('control-exitfullscreen');
+            console.log('Exiting fullscreen');
+            break;
+
+          default:
+            console.warn(`Unknown command: ${message.command}`);
+        }
+      }
+    } catch (e) {
+      console.error('Error handling message:', e);
+    }
+  });
 
   socket.on('disconnect', () => {
     connectedClients--;
@@ -514,6 +637,43 @@ app.delete('/api/keys/:keyId', (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to delete API key'
+    });
+  }
+});
+
+// API endpoint to rename a key (no authentication required for now)
+app.patch('/api/keys/:keyId', (req, res) => {
+  const { keyId } = req.params;
+  const { name } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({
+      success: false,
+      error: 'Name is required'
+    });
+  }
+
+  const fileKeys = loadApiKeys();
+  const keyIndex = fileKeys.findIndex(k => k.id === keyId);
+
+  if (keyIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      error: 'API key not found'
+    });
+  }
+
+  fileKeys[keyIndex].name = name.trim();
+
+  if (saveApiKeys(fileKeys)) {
+    res.json({
+      success: true,
+      message: 'API key renamed successfully'
+    });
+  } else {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to rename API key'
     });
   }
 });
@@ -823,6 +983,21 @@ app.get('/openapi.json', (req, res) => {
 
 // Serve Swagger UI for interactive API documentation
 app.get('/api-docs', (req, res) => {
+  // Set custom CSP headers for Swagger UI to work properly
+  res.setHeader(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
+      "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+      "img-src 'self' https: data:",
+      "font-src 'self' https://cdn.jsdelivr.net data:",
+      "connect-src 'self' https://cdn.jsdelivr.net",
+      "object-src 'none'",
+      "base-uri 'self'"
+    ].join('; ')
+  );
+
   const html = `
 <!DOCTYPE html>
 <html lang="en">

@@ -212,6 +212,28 @@
             transform: translateY(0);
         }
 
+        .rename-btn {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .rename-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .rename-btn:active {
+            transform: translateY(0);
+        }
+
         .delete-btn {
             padding: 10px 20px;
             background: #dc3545;
@@ -322,8 +344,8 @@
             <div class="config-box">
                 <h3>Use these values to connect your device:</h3>
                 <div class="config-item">
-                    <span class="config-label">WebSocket URL:</span>
-                    <span class="config-value" id="wsUrl">ws://loading...</span>
+                    <span class="config-label">Server URL (Socket.io):</span>
+                    <span class="config-value" id="serverUrl">http://loading...</span>
                 </div>
                 <div class="config-item">
                     <span class="config-label">API Key:</span>
@@ -335,7 +357,7 @@
                 </div>
             </div>
             <p style="color: #666; font-size: 0.95em; line-height: 1.6;">
-                <strong>Quick Setup:</strong> Generate an API key below, then enter the WebSocket URL, your API key, and header name (X-API-Key) into your device settings.
+                <strong>Quick Setup:</strong> Generate an API key below, then enter the Server URL, your API key, and header name (X-API-Key) into your device settings.
             </p>
         </div>
 

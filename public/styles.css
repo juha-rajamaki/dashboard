@@ -53,6 +53,36 @@ header h1 {
     background: #5568d3;
 }
 
+.compact-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+    background: transparent;
+    border: 2px solid #667eea;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: #667eea;
+}
+
+.compact-toggle-btn:hover {
+    background: #667eea;
+    color: white;
+    transform: scale(1.05);
+}
+
+.compact-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+.compact-toggle-btn.active {
+    background: #667eea;
+    color: white;
+}
+
 .status {
     display: flex;
     align-items: center;
@@ -343,10 +373,10 @@ main {
 /* Video Controls */
 .video-controls {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     justify-content: center;
     background: white;
-    padding: 15px;
+    padding: 10px;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
@@ -354,27 +384,26 @@ main {
 .control-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
     background: #667eea;
     color: white;
     border: none;
-    border-radius: 5px;
-    font-size: 1em;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s;
-    flex: 1;
-    justify-content: center;
+    transition: all 0.2s;
 }
 
 .control-btn:hover {
     background: #5568d3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    transform: scale(1.05);
+    box-shadow: 0 3px 6px rgba(102, 126, 234, 0.3);
 }
 
 .control-btn:active {
-    transform: translateY(0);
+    transform: scale(0.95);
 }
 
 .control-btn svg {
@@ -412,18 +441,32 @@ main {
 }
 
 .clear-btn {
-    padding: 6px 12px;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    background: transparent;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.3s;
 }
 
 .clear-btn:hover {
-    background: #c82333;
+    background: #dc3545;
+    color: white;
+    transform: scale(1.05);
+}
+
+.clear-btn:active {
+    transform: scale(0.95);
+}
+
+.clear-btn svg {
+    flex-shrink: 0;
 }
 
 .history-list {
@@ -526,15 +569,6 @@ main {
 @media (max-width: 1024px) {
     main {
         grid-template-columns: 1fr;
-    }
-
-    .video-controls {
-        flex-wrap: wrap;
-    }
-
-    .control-btn {
-        flex: 1 1 calc(33.333% - 7px);
-        min-width: 100px;
     }
 }
 
@@ -654,4 +688,48 @@ main {
 
 .toast.hiding {
     animation: fadeOut 0.3s ease-out forwards;
+}
+
+/* Fake Fullscreen Mode (CSS-based workaround for browser restrictions) */
+.video-container.fake-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: #000 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.video-container.fake-fullscreen #player {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.video-container.fake-fullscreen .placeholder.hidden {
+    display: none !important;
+}
+
+/* Hide other elements when in fake fullscreen */
+body.fake-fullscreen-active header,
+body.fake-fullscreen-active .controls,
+body.fake-fullscreen-active .test-section,
+body.fake-fullscreen-active .history-section,
+body.fake-fullscreen-active #toastContainer {
+    display: none !important;
+}
+
+body.fake-fullscreen-active {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+body.fake-fullscreen-active .container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
 }

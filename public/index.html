@@ -11,6 +11,22 @@
         <header>
             <h1>YouTube Dashboard</h1>
             <div class="header-right">
+                <button class="compact-toggle-btn active" id="toggleSidebar" title="Toggle Info Panels">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </button>
+                <button class="compact-toggle-btn active" id="toggleYTControls" title="Toggle YouTube Controls">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+                        <circle cx="8" cy="8" r="2"></circle>
+                        <circle cx="16" cy="8" r="2"></circle>
+                        <path d="M7 16h10"></path>
+                    </svg>
+                </button>
                 <a href="/documentation" class="doc-link" target="_blank">📖 Docs</a>
                 <a href="/api-docs" class="doc-link" target="_blank">⚙️ API</a>
                 <a href="/keys" class="doc-link">🔐 Keys</a>
@@ -36,30 +52,26 @@
                 </div>
 
                 <div class="video-controls">
-                    <button id="pauseBtn" class="control-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <button id="pauseBtn" class="control-btn" title="Pause">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                             <rect x="6" y="4" width="4" height="16"></rect>
                             <rect x="14" y="4" width="4" height="16"></rect>
                         </svg>
-                        Pause
                     </button>
-                    <button id="playBtn" class="control-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <button id="playBtn" class="control-btn" title="Resume">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                             <polygon points="5 3 19 12 5 21 5 3"></polygon>
                         </svg>
-                        Resume
                     </button>
-                    <button id="stopBtn" class="control-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <button id="stopBtn" class="control-btn" title="Stop">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                             <rect x="6" y="6" width="12" height="12"></rect>
                         </svg>
-                        Stop
                     </button>
-                    <button id="fullscreenBtn" class="control-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button id="fullscreenBtn" class="control-btn" title="Fullscreen">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
                         </svg>
-                        Fullscreen
                     </button>
                 </div>
             </div>
@@ -106,7 +118,14 @@
                                     <polyline points="6 9 12 15 18 9"></polyline>
                                 </svg>
                             </button>
-                            <button id="clearHistory" class="clear-btn">Clear</button>
+                            <button id="clearHistory" class="clear-btn" title="Clear History">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                     <div id="historyList" class="history-list"></div>
