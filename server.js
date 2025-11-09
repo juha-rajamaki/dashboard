@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -35,6 +37,42 @@ const io = socketIo(server, {
 });
 
 const PORT = process.env.PORT || 1212;
+
+// Load and validate API keys from environment
+const API_KEYS = (process.env.API_KEYS || '')
+  .split(',')
+  .map(key => key.trim())
+  .filter(key => key.length > 0);
+
+// Validate API keys on startup
+if (API_KEYS.length === 0 || API_KEYS.includes('your-secret-api-key-change-this-in-production')) {
+  console.warn('⚠️  WARNING: Using default or no API keys! Please set secure API_KEYS in .env file');
+  console.warn('⚠️  Generate secure keys with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+}
+
+// Authentication middleware
+function requireApiKey(req, res, next) {
+  const apiKey = req.headers['x-api-key'];
+
+  if (!apiKey) {
+    console.warn(`[AUTH] Missing API key from IP: ${req.ip}`);
+    return res.status(401).json({
+      success: false,
+      error: 'API key required. Include X-API-Key header in your request.'
+    });
+  }
+
+  if (!API_KEYS.includes(apiKey)) {
+    console.warn(`[AUTH] Invalid API key attempt from IP: ${req.ip}`);
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid API key'
+    });
+  }
+
+  console.log(`[AUTH] Authenticated request from IP: ${req.ip}`);
+  next();
+}
 
 // URL validation function
 function isValidYouTubeUrl(url) {
@@ -140,7 +178,7 @@ io.on('connection', (socket) => {
 });
 
 // API endpoint to receive YouTube URL
-app.post('/api/play', playLimiter, (req, res) => {
+app.post('/api/play', requireApiKey, playLimiter, (req, res) => {
   const { url } = req.body;
 
   if (!url) {
@@ -180,7 +218,7 @@ app.post('/api/play', playLimiter, (req, res) => {
 });
 
 // Pause video endpoint
-app.post('/api/pause', playLimiter, (req, res) => {
+app.post('/api/pause', requireApiKey, playLimiter, (req, res) => {
   console.log('Pause command received');
   io.emit('control-pause');
   res.json({
@@ -191,7 +229,7 @@ app.post('/api/pause', playLimiter, (req, res) => {
 });
 
 // Resume/Play video endpoint
-app.post('/api/resume', playLimiter, (req, res) => {
+app.post('/api/resume', requireApiKey, playLimiter, (req, res) => {
   console.log('Resume command received');
   io.emit('control-resume');
   res.json({
@@ -202,7 +240,7 @@ app.post('/api/resume', playLimiter, (req, res) => {
 });
 
 // Stop video endpoint
-app.post('/api/stop', playLimiter, (req, res) => {
+app.post('/api/stop', requireApiKey, playLimiter, (req, res) => {
   console.log('Stop command received');
   io.emit('control-stop');
   res.json({
@@ -213,7 +251,7 @@ app.post('/api/stop', playLimiter, (req, res) => {
 });
 
 // Fullscreen endpoint
-app.post('/api/fullscreen', playLimiter, (req, res) => {
+app.post('/api/fullscreen', requireApiKey, playLimiter, (req, res) => {
   console.log('Fullscreen command received');
   io.emit('control-fullscreen');
   res.json({
@@ -224,7 +262,7 @@ app.post('/api/fullscreen', playLimiter, (req, res) => {
 });
 
 // Exit fullscreen endpoint
-app.post('/api/exitfullscreen', playLimiter, (req, res) => {
+app.post('/api/exitfullscreen', requireApiKey, playLimiter, (req, res) => {
   console.log('Exit fullscreen command received');
   io.emit('control-exitfullscreen');
   res.json({

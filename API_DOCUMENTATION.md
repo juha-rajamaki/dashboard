@@ -45,14 +45,78 @@ For production deployments, replace `localhost:1212` with your server's hostname
 
 ## Authentication
 
-Currently, the API does not require authentication. However, the following security measures are in place:
+All API control endpoints require authentication via API key.
+
+### How It Works
+
+Include your API key in the `X-API-Key` header with every request to control endpoints:
+
+```bash
+curl -X POST http://localhost:1212/api/play \
+  -H "X-API-Key: your-secret-api-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}'
+```
+
+### Getting Your API Key
+
+1. Locate the `.env` file in your dashboard installation directory
+2. Find or set the `API_KEYS` variable
+3. Generate a secure key: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+4. Add your key to `.env`: `API_KEYS=your-generated-key-here`
+5. Restart the server for changes to take effect
+
+### Multiple API Keys
+
+You can specify multiple API keys (comma-separated) in `.env`:
+```
+API_KEYS=key-for-home-automation,key-for-mobile-app,key-for-scripts
+```
+
+### Protected Endpoints
+
+The following endpoints require authentication:
+- `POST /api/play`
+- `POST /api/pause`
+- `POST /api/resume`
+- `POST /api/stop`
+- `POST /api/fullscreen`
+- `POST /api/exitfullscreen`
+
+### Public Endpoints
+
+The following endpoints do NOT require authentication:
+- `GET /` (dashboard viewing)
+- `GET /documentation`
+- `GET /api-docs`
+- `GET /openapi.json`
+- `GET /api/health`
+- WebSocket connections (viewing only)
+
+### Authentication Errors
+
+**Missing API Key:**
+```json
+{
+  "success": false,
+  "error": "API key required. Include X-API-Key header in your request."
+}
+```
+
+**Invalid API Key:**
+```json
+{
+  "success": false,
+  "error": "Invalid API key"
+}
+```
+
+### Additional Security Measures
 
 - **CORS**: Restricted to allowed origins (localhost:1212, 127.0.0.1:1212)
 - **Rate Limiting**: 100 requests per 15 minutes globally, 30 video control requests per minute
 - **URL Validation**: Only valid YouTube URLs are accepted
 - **Request Size Limit**: Maximum 10KB request body
-
-For production use, it's recommended to add authentication and restrict CORS to your specific domains.
 
 ---
 

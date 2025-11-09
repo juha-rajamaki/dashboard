@@ -36,6 +36,11 @@
         "summary": "Play video on all connected dashboards",
         "description": "Broadcasts a YouTube URL to all connected dashboard clients via WebSocket. Video will start playing automatically at the highest available quality.",
         "operationId": "playVideo",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -91,6 +96,9 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
           }
@@ -103,6 +111,11 @@
         "summary": "Pause video on all dashboards",
         "description": "Broadcasts a pause command to all connected dashboard clients via WebSocket.",
         "operationId": "pauseVideo",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Pause command successfully sent",
@@ -119,6 +132,9 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
           }
@@ -131,6 +147,11 @@
         "summary": "Resume video on all dashboards",
         "description": "Broadcasts a resume/play command to all connected dashboard clients via WebSocket.",
         "operationId": "resumeVideo",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Resume command successfully sent",
@@ -147,6 +168,9 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
           }
@@ -159,6 +183,11 @@
         "summary": "Stop video on all dashboards",
         "description": "Broadcasts a stop command to all connected dashboard clients via WebSocket. Video will stop and return to placeholder screen.",
         "operationId": "stopVideo",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Stop command successfully sent",
@@ -175,6 +204,9 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
           }
@@ -187,6 +219,11 @@
         "summary": "Enter fullscreen mode",
         "description": "Broadcasts a fullscreen command to all connected dashboard clients via WebSocket. Note: May require user interaction in some browsers due to security restrictions.",
         "operationId": "enterFullscreen",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Fullscreen command successfully sent",
@@ -203,6 +240,9 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
           }
@@ -215,6 +255,11 @@
         "summary": "Exit fullscreen mode",
         "description": "Broadcasts an exit fullscreen command to all connected dashboard clients via WebSocket.",
         "operationId": "exitFullscreen",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Exit fullscreen command successfully sent",
@@ -230,6 +275,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
@@ -332,6 +380,14 @@
         "required": ["status", "connectedClients"]
       }
     },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for authenticating control requests. Generate a secure key using: `node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"`"
+      }
+    },
     "responses": {
       "BadRequest": {
         "description": "Bad request - invalid or missing parameters",
@@ -386,6 +442,32 @@
                 "value": {
                   "success": false,
                   "error": "Too many video requests, please slow down"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Authentication required - missing or invalid API key",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "missingKey": {
+                "summary": "Missing API key",
+                "value": {
+                  "success": false,
+                  "error": "API key required. Include X-API-Key header in your request."
+                }
+              },
+              "invalidKey": {
+                "summary": "Invalid API key",
+                "value": {
+                  "success": false,
+                  "error": "Invalid API key"
                 }
               }
             }
