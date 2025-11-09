@@ -260,14 +260,26 @@
             const errorEl = document.getElementById('error');
 
             try {
+                console.log('Starting to load documentation...');
+
+                // Check if marked is loaded
+                if (typeof marked === 'undefined') {
+                    throw new Error('Marked library not loaded. Please check your internet connection.');
+                }
+
+                console.log('Marked library loaded successfully');
+
                 // Fetch the markdown file
+                console.log('Fetching markdown file...');
                 const response = await fetch('/API_DOCUMENTATION.md');
 
                 if (!response.ok) {
-                    throw new Error('Failed to load documentation');
+                    throw new Error(`Failed to load documentation: ${response.status} ${response.statusText}`);
                 }
 
+                console.log('Markdown file fetched successfully');
                 const markdown = await response.text();
+                console.log('Markdown text length:', markdown.length);
 
                 // Configure marked options
                 marked.setOptions({
@@ -278,12 +290,16 @@
                 });
 
                 // Convert markdown to HTML
+                console.log('Converting markdown to HTML...');
                 const html = marked.parse(markdown);
+                console.log('Conversion complete');
 
                 // Display the content
                 contentEl.innerHTML = html;
                 loadingEl.style.display = 'none';
                 contentEl.style.display = 'block';
+
+                console.log('Documentation loaded successfully!');
 
                 // Add smooth scrolling for anchor links
                 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -299,13 +315,17 @@
             } catch (error) {
                 console.error('Error loading documentation:', error);
                 loadingEl.style.display = 'none';
-                errorEl.textContent = 'Failed to load documentation. Please try again later.';
+                errorEl.textContent = `Failed to load documentation: ${error.message}`;
                 errorEl.style.display = 'block';
             }
         }
 
         // Load documentation when page loads
-        window.addEventListener('DOMContentLoaded', loadDocumentation);
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, waiting for marked library...');
+            // Wait a bit for marked.js to load
+            setTimeout(loadDocumentation, 500);
+        });
     </script>
 </body>
 </html>
