@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>YouTube Dashboard</h1>
+            <div class="status">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </header>
+
+        <main>
+            <div class="video-container">
+                <div id="player"></div>
+                <div class="placeholder" id="placeholder">
+                    <div class="placeholder-content">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <p>Waiting for video URL...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h2>Current Video</h2>
+                <p id="currentUrl">No video loaded</p>
+
+                <h2>API Information</h2>
+                <div class="api-info">
+                    <p><strong>Endpoint:</strong> POST /api/play</p>
+                    <p><strong>Body:</strong> <code>{ "url": "youtube_url" }</code></p>
+                </div>
+
+                <h2>Test API</h2>
+                <div class="test-form">
+                    <input type="text" id="testUrl" placeholder="Enter YouTube URL" />
+                    <button id="testButton">Send to API</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
