@@ -654,6 +654,45 @@ if (currentUrlIcon) {
     });
 }
 
+// Toggle panel visibility
+function setupToggleButtons() {
+    const toggleCurrentVideo = document.getElementById('toggleCurrentVideo');
+    const toggleHistory = document.getElementById('toggleHistory');
+    const currentVideoContent = document.getElementById('currentVideoContent');
+    const historyList = document.getElementById('historyList');
+
+    if (!toggleCurrentVideo || !toggleHistory) return;
+
+    // Load saved states from localStorage
+    const currentVideoCollapsed = localStorage.getItem('currentVideoCollapsed') === 'true';
+    const historyCollapsed = localStorage.getItem('historyCollapsed') === 'true';
+
+    if (currentVideoCollapsed) {
+        currentVideoContent.classList.add('collapsed');
+        toggleCurrentVideo.classList.add('collapsed');
+    }
+
+    if (historyCollapsed) {
+        historyList.classList.add('collapsed');
+        toggleHistory.classList.add('collapsed');
+    }
+
+    // Toggle current video section
+    toggleCurrentVideo.addEventListener('click', () => {
+        currentVideoContent.classList.toggle('collapsed');
+        toggleCurrentVideo.classList.toggle('collapsed');
+        localStorage.setItem('currentVideoCollapsed', currentVideoContent.classList.contains('collapsed'));
+    });
+
+    // Toggle history section
+    toggleHistory.addEventListener('click', () => {
+        historyList.classList.toggle('collapsed');
+        toggleHistory.classList.toggle('collapsed');
+        localStorage.setItem('historyCollapsed', historyList.classList.contains('collapsed'));
+    });
+}
+
 // Initialize
 loadYouTubeAPI();
 loadHistory();
+setupToggleButtons();

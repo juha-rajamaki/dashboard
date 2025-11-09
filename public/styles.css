@@ -183,6 +183,13 @@ main {
     height: fit-content;
 }
 
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
 .info-panel h2 {
     color: #667eea;
     font-size: 1.2em;
@@ -192,6 +199,40 @@ main {
 
 .info-panel h2:first-child {
     margin-top: 0;
+}
+
+.panel-header h2 {
+    margin: 0;
+}
+
+.toggle-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #667eea;
+    transition: transform 0.3s ease;
+    border-radius: 4px;
+}
+
+.toggle-icon:hover {
+    background: #f0f0f0;
+}
+
+.toggle-icon.collapsed {
+    transform: rotate(-90deg);
+}
+
+.toggle-icon svg {
+    display: block;
+}
+
+.current-video-info.collapsed,
+.history-list.collapsed {
+    display: none;
 }
 
 .info-panel p {
@@ -362,6 +403,12 @@ main {
     margin: 0;
     color: #667eea;
     font-size: 1.2em;
+}
+
+.history-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .clear-btn {

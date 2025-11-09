@@ -164,7 +164,7 @@ app.use((req, res, next) => {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' https://www.youtube.com https://cdn.socket.io https://cdn.jsdelivr.net",
+      "script-src 'self' 'unsafe-eval' https://www.youtube.com https://cdn.socket.io https://cdn.jsdelivr.net",
       "frame-src 'self' https://www.youtube.com",
       "connect-src 'self' ws://localhost:1212 wss://localhost:1212 https://www.youtube.com",
       "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",

@@ -66,8 +66,15 @@
 
             <div class="sidebar">
                 <div class="info-panel">
-                    <h2>Current Video</h2>
-                    <div class="current-video-info">
+                    <div class="panel-header">
+                        <h2>Current Video</h2>
+                        <button class="toggle-icon" id="toggleCurrentVideo" title="Toggle visibility">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="current-video-info" id="currentVideoContent">
                         <p id="currentUrl">No video loaded</p>
                         <button id="currentUrlIcon" class="url-icon" style="display: none;" title="Click to copy URL">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -93,7 +100,14 @@
                 <div class="history-panel">
                     <div class="history-header">
                         <h2>History</h2>
-                        <button id="clearHistory" class="clear-btn">Clear</button>
+                        <div class="history-header-actions">
+                            <button class="toggle-icon" id="toggleHistory" title="Toggle visibility">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <button id="clearHistory" class="clear-btn">Clear</button>
+                        </div>
                     </div>
                     <div id="historyList" class="history-list"></div>
                 </div>
