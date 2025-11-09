@@ -101,6 +101,15 @@ function onPlayerStateChange(event) {
             console.log('Set video quality to:', selectedQuality);
             qualitySetForCurrentVideo = true;
 
+            // Update title in current video display after quality is set
+            setTimeout(() => {
+                const title = getVideoTitle();
+                if (title && currentUrlElement) {
+                    currentUrlElement.setAttribute('data-url', currentUrlElement.textContent);
+                    currentUrlElement.textContent = title;
+                }
+            }, 500);
+
         } catch (e) {
             console.warn('Could not set quality:', e);
             qualitySetForCurrentVideo = true; // Don't retry on error
@@ -158,8 +167,21 @@ function validateHistoryItem(item) {
     return true;
 }
 
+// Get video title from player
+function getVideoTitle() {
+    try {
+        if (player && isPlayerReady) {
+            const videoData = player.getVideoData();
+            return videoData && videoData.title ? videoData.title : null;
+        }
+    } catch (e) {
+        console.warn('Could not get video title:', e);
+    }
+    return null;
+}
+
 // Add video to history
-function addToHistory(url) {
+function addToHistory(url, title = null) {
     // Validate URL before adding
     if (!isValidYouTubeUrl(url)) {
         console.warn('Invalid URL rejected from history:', url);
@@ -175,6 +197,9 @@ function addToHistory(url) {
         minute: '2-digit'
     });
 
+    // Use provided title or try to get it from player
+    const videoTitle = title || getVideoTitle() || 'YouTube Video';
+
     // Check if URL already exists in history
     const existingIndex = videoHistory.findIndex(item => item.url === url);
 
@@ -187,6 +212,7 @@ function addToHistory(url) {
     videoHistory.unshift({
         url,
         videoId,
+        title: videoTitle,
         timestamp
     });
 
@@ -302,16 +328,41 @@ function renderHistory() {
         const historyInfo = document.createElement('div');
         historyInfo.className = 'history-info';
 
-        const historyUrl = document.createElement('div');
-        historyUrl.className = 'history-url';
-        historyUrl.textContent = item.url; // Safe - no HTML parsing
-        historyUrl.title = item.url;
+        const titleRow = document.createElement('div');
+        titleRow.className = 'history-title-row';
+
+        const historyTitle = document.createElement('div');
+        historyTitle.className = 'history-title';
+        historyTitle.textContent = item.title || item.url; // Safe - no HTML parsing
+        historyTitle.title = item.url;
+
+        // Add link icon to view URL
+        const urlIcon = document.createElement('button');
+        urlIcon.className = 'url-icon';
+        urlIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>';
+        urlIcon.title = item.url;
+        urlIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Copy URL to clipboard
+            navigator.clipboard.writeText(item.url).then(() => {
+                const originalTitle = urlIcon.title;
+                urlIcon.title = 'Copied!';
+                setTimeout(() => {
+                    urlIcon.title = originalTitle;
+                }, 2000);
+            }).catch(() => {
+                alert(item.url);
+            });
+        });
+
+        titleRow.appendChild(historyTitle);
+        titleRow.appendChild(urlIcon);
 
         const historyTime = document.createElement('div');
         historyTime.className = 'history-time';
         historyTime.textContent = item.timestamp;
 
-        historyInfo.appendChild(historyUrl);
+        historyInfo.appendChild(titleRow);
         historyInfo.appendChild(historyTime);
 
         const replayBtn = document.createElement('button');
@@ -360,6 +411,13 @@ function playVideo(url, addToHistoryFlag = true) {
 
     // Update current URL display
     currentUrlElement.textContent = url;
+    currentUrlElement.setAttribute('data-url', url);
+
+    // Show URL icon
+    const currentUrlIcon = document.getElementById('currentUrlIcon');
+    if (currentUrlIcon) {
+        currentUrlIcon.style.display = 'inline-flex';
+    }
 
     // Add to history
     if (addToHistoryFlag) {
@@ -575,6 +633,25 @@ if (fullscreenBtn) {
 // Clear history button
 if (clearHistoryBtn) {
     clearHistoryBtn.addEventListener('click', clearHistory);
+}
+
+// Current URL icon button
+const currentUrlIcon = document.getElementById('currentUrlIcon');
+if (currentUrlIcon) {
+    currentUrlIcon.addEventListener('click', () => {
+        const url = currentUrlElement.getAttribute('data-url') || currentUrlElement.textContent;
+        if (url && url !== 'No video loaded') {
+            navigator.clipboard.writeText(url).then(() => {
+                const originalTitle = currentUrlIcon.title;
+                currentUrlIcon.title = 'Copied!';
+                setTimeout(() => {
+                    currentUrlIcon.title = originalTitle;
+                }, 2000);
+            }).catch(() => {
+                alert(url);
+            });
+        }
+    });
 }
 
 // Initialize

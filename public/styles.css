@@ -200,13 +200,47 @@ main {
     margin-bottom: 10px;
 }
 
-#currentUrl {
-    word-break: break-all;
+.current-video-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 10px;
     background: #f8f9fa;
     border-radius: 5px;
-    font-family: monospace;
-    font-size: 0.9em;
+}
+
+#currentUrl {
+    flex: 1;
+    word-break: break-word;
+    font-size: 0.95em;
+    line-height: 1.4;
+}
+
+.url-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 6px;
+    background: transparent;
+    border: 1px solid #d0d0d0;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    color: #667eea;
+}
+
+.url-icon:hover {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+    transform: scale(1.05);
+}
+
+.url-icon:active {
+    transform: scale(0.95);
 }
 
 .api-info {
@@ -396,13 +430,21 @@ main {
     min-width: 0;
 }
 
-.history-url {
+.history-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.history-title {
+    flex: 1;
     font-size: 0.9em;
     color: #333;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 4px;
+    font-weight: 500;
 }
 
 .history-time {
