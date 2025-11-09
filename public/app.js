@@ -22,6 +22,8 @@ const clearHistoryBtn = document.getElementById('clearHistory');
 const pauseBtn = document.getElementById('pauseBtn');
 const playBtn = document.getElementById('playBtn');
 const stopBtn = document.getElementById('stopBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const videoContainer = document.querySelector('.video-container');
 
 // Load YouTube IFrame API
 function loadYouTubeAPI() {
@@ -258,6 +260,59 @@ testUrl.addEventListener('keypress', (e) => {
     }
 });
 
+// Fullscreen functionality
+function toggleFullscreen() {
+    if (!videoContainer) return;
+
+    if (!document.fullscreenElement) {
+        // Enter fullscreen
+        if (videoContainer.requestFullscreen) {
+            videoContainer.requestFullscreen();
+        } else if (videoContainer.webkitRequestFullscreen) {
+            videoContainer.webkitRequestFullscreen();
+        } else if (videoContainer.msRequestFullscreen) {
+            videoContainer.msRequestFullscreen();
+        }
+    } else {
+        // Exit fullscreen
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+    }
+}
+
+// Update fullscreen button text when fullscreen state changes
+function updateFullscreenButton() {
+    if (!fullscreenBtn) return;
+
+    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+
+    if (isFullscreen) {
+        fullscreenBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+            </svg>
+            Exit Fullscreen
+        `;
+    } else {
+        fullscreenBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+            </svg>
+            Fullscreen
+        `;
+    }
+}
+
+// Listen for fullscreen changes (including ESC key)
+document.addEventListener('fullscreenchange', updateFullscreenButton);
+document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+document.addEventListener('msfullscreenchange', updateFullscreenButton);
+
 // Video control buttons
 if (pauseBtn) {
     pauseBtn.addEventListener('click', () => {
@@ -286,6 +341,10 @@ if (stopBtn) {
             console.log('Video stopped');
         }
     });
+}
+
+if (fullscreenBtn) {
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
 }
 
 // Clear history button
