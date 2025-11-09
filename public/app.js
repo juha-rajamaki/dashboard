@@ -77,10 +77,48 @@ function extractVideoId(url) {
     return null;
 }
 
+// Validate YouTube URL for security
+function isValidYouTubeUrl(url) {
+    if (typeof url !== 'string' || url.length > 500) {
+        return false;
+    }
+
+    // Only allow YouTube URLs or valid video IDs
+    const validPatterns = [
+        /^https?:\/\/(www\.)?youtube\.com\/watch\?v=[a-zA-Z0-9_-]{11}(&.*)?$/,
+        /^https?:\/\/youtu\.be\/[a-zA-Z0-9_-]{11}$/,
+        /^https?:\/\/(www\.)?youtube\.com\/embed\/[a-zA-Z0-9_-]{11}$/,
+        /^[a-zA-Z0-9_-]{11}$/ // Direct video ID
+    ];
+
+    return validPatterns.some(pattern => pattern.test(url));
+}
+
+// Validate history item structure
+function validateHistoryItem(item) {
+    if (!item || typeof item !== 'object') return false;
+    if (!isValidYouTubeUrl(item.url)) return false;
+    if (typeof item.timestamp !== 'string' || item.timestamp.length > 100) return false;
+    if (item.videoId && typeof item.videoId !== 'string') return false;
+    return true;
+}
+
 // Add video to history
 function addToHistory(url) {
+    // Validate URL before adding
+    if (!isValidYouTubeUrl(url)) {
+        console.warn('Invalid URL rejected from history:', url);
+        return;
+    }
+
     const videoId = extractVideoId(url);
-    const timestamp = new Date().toLocaleString();
+    const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 
     // Check if URL already exists in history
     const existingIndex = videoHistory.findIndex(item => item.url === url);
@@ -109,25 +147,74 @@ function addToHistory(url) {
     renderHistory();
 }
 
-// Save history to localStorage
+// Save history to localStorage with quota management
 function saveHistory() {
     try {
+        const historyJson = JSON.stringify(videoHistory);
+
+        // Check size (localStorage limit is typically 5-10MB)
+        const sizeInBytes = new Blob([historyJson]).size;
+        const maxSizeBytes = 500000; // 500KB limit for safety
+
+        if (sizeInBytes > maxSizeBytes) {
+            console.warn('History too large, trimming...');
+            // Remove oldest entries until under limit
+            while (videoHistory.length > 0 &&
+                   new Blob([JSON.stringify(videoHistory)]).size > maxSizeBytes) {
+                videoHistory.pop();
+            }
+        }
+
         localStorage.setItem('videoHistory', JSON.stringify(videoHistory));
     } catch (e) {
-        console.error('Failed to save history:', e);
+        if (e.name === 'QuotaExceededError') {
+            console.error('localStorage quota exceeded, clearing old history');
+            // Keep only 10 most recent entries
+            videoHistory = videoHistory.slice(0, 10);
+            try {
+                localStorage.setItem('videoHistory', JSON.stringify(videoHistory));
+            } catch (e2) {
+                console.error('Failed to save even trimmed history');
+                localStorage.removeItem('videoHistory');
+            }
+        } else {
+            console.error('Failed to save history:', e);
+        }
     }
 }
 
-// Load history from localStorage
+// Load history from localStorage with validation
 function loadHistory() {
     try {
         const saved = localStorage.getItem('videoHistory');
         if (saved) {
-            videoHistory = JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+
+            // Validate it's an array
+            if (!Array.isArray(parsed)) {
+                console.warn('Invalid history format - resetting');
+                localStorage.removeItem('videoHistory');
+                return;
+            }
+
+            // Filter and validate each item
+            videoHistory = parsed
+                .filter(validateHistoryItem)
+                .slice(0, MAX_HISTORY); // Enforce max length
+
+            // If we filtered out items, update localStorage
+            if (videoHistory.length !== parsed.length) {
+                console.warn(`Removed ${parsed.length - videoHistory.length} invalid history items`);
+                saveHistory();
+            }
+
             renderHistory();
         }
     } catch (e) {
         console.error('Failed to load history:', e);
+        // Clear corrupted data
+        localStorage.removeItem('videoHistory');
+        videoHistory = [];
     }
 }
 
@@ -149,20 +236,44 @@ function renderHistory() {
         return;
     }
 
-    historyList.innerHTML = videoHistory.map((item, index) => `
-        <div class="history-item">
-            <div class="history-info">
-                <div class="history-url" title="${item.url}">${item.url}</div>
-                <div class="history-time">${item.timestamp}</div>
-            </div>
-            <button class="replay-btn" onclick="replayVideo('${item.url.replace(/'/g, "\\'")}')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-                Play
-            </button>
-        </div>
-    `).join('');
+    // Clear existing content
+    historyList.innerHTML = '';
+
+    videoHistory.forEach((item) => {
+        // Create elements programmatically to prevent XSS
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+
+        const historyInfo = document.createElement('div');
+        historyInfo.className = 'history-info';
+
+        const historyUrl = document.createElement('div');
+        historyUrl.className = 'history-url';
+        historyUrl.textContent = item.url; // Safe - no HTML parsing
+        historyUrl.title = item.url;
+
+        const historyTime = document.createElement('div');
+        historyTime.className = 'history-time';
+        historyTime.textContent = item.timestamp;
+
+        historyInfo.appendChild(historyUrl);
+        historyInfo.appendChild(historyTime);
+
+        const replayBtn = document.createElement('button');
+        replayBtn.className = 'replay-btn';
+        replayBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Play
+        `;
+        // Use addEventListener instead of onclick attribute to prevent injection
+        replayBtn.addEventListener('click', () => replayVideo(item.url));
+
+        historyItem.appendChild(historyInfo);
+        historyItem.appendChild(replayBtn);
+        historyList.appendChild(historyItem);
+    });
 }
 
 // Replay video from history
@@ -230,6 +341,12 @@ testButton.addEventListener('click', async () => {
         return;
     }
 
+    // Validate URL before sending
+    if (!isValidYouTubeUrl(url)) {
+        alert('Please enter a valid YouTube URL');
+        return;
+    }
+
     try {
         const response = await fetch('/api/play', {
             method: 'POST',
@@ -245,11 +362,11 @@ testButton.addEventListener('click', async () => {
             console.log('Video URL sent successfully');
             testUrl.value = '';
         } else {
-            alert('Error: ' + result.error);
+            alert('Error: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error sending video URL:', error);
-        alert('Error sending video URL');
+        alert('Failed to send video URL. Please try again.');
     }
 });
 
