@@ -1,6 +1,7 @@
 // YouTube Player API
 let player;
 let isPlayerReady = false;
+let qualitySetForCurrentVideo = false;
 
 // WebSocket connection
 const socket = io();
@@ -42,8 +43,7 @@ function onYouTubeIframeAPIReady() {
             autoplay: 1,
             controls: 1,
             modestbranding: 1,
-            rel: 0,
-            hd: 1  // Enable HD playback
+            rel: 0
         },
         events: {
             onReady: onPlayerReady,
@@ -59,18 +59,55 @@ function onPlayerReady(event) {
 }
 
 function onPlayerStateChange(event) {
-    // Set quality to highest available when video loads or plays
-    if (event.data === YT.PlayerState.PLAYING || event.data === YT.PlayerState.BUFFERING) {
+    // Set quality only once when video starts playing
+    if (event.data === YT.PlayerState.PLAYING && !qualitySetForCurrentVideo) {
         try {
-            const availableQualityLevels = player.getAvailableQualityLevels();
-            if (availableQualityLevels && availableQualityLevels.length > 0) {
-                // Set to highest quality (first in array is highest)
-                player.setPlaybackQuality(availableQualityLevels[0]);
-                console.log('Set video quality to:', availableQualityLevels[0]);
+            // Validate player is ready
+            if (!player || !isPlayerReady) {
+                console.warn('Player not ready for quality adjustment');
+                return;
             }
+
+            const availableQualityLevels = player.getAvailableQualityLevels();
+
+            if (!availableQualityLevels || availableQualityLevels.length === 0) {
+                console.warn('No quality levels available for this video');
+                qualitySetForCurrentVideo = true;
+                return;
+            }
+
+            // Define quality priority (highest to lowest)
+            const qualityPreference = [
+                'highres',  // 4K/8K
+                'hd2160',   // 4K
+                'hd1440',   // 1440p
+                'hd1080',   // 1080p
+                'hd720',    // 720p
+                'large',    // 480p
+                'medium',   // 360p
+                'small'     // 240p
+            ];
+
+            // Find highest available quality from our preference list
+            let selectedQuality = availableQualityLevels[0]; // Fallback to first
+            for (const quality of qualityPreference) {
+                if (availableQualityLevels.includes(quality)) {
+                    selectedQuality = quality;
+                    break;
+                }
+            }
+
+            player.setPlaybackQuality(selectedQuality);
+            console.log('Set video quality to:', selectedQuality);
+            qualitySetForCurrentVideo = true;
+
         } catch (e) {
             console.warn('Could not set quality:', e);
+            qualitySetForCurrentVideo = true; // Don't retry on error
         }
+    } else if (event.data === YT.PlayerState.CUED || event.data === YT.PlayerState.UNSTARTED) {
+        // Reset flag when a new video is loaded
+        qualitySetForCurrentVideo = false;
     }
 }
 
@@ -318,11 +355,8 @@ function playVideo(url, addToHistoryFlag = true) {
     // Hide placeholder to show player underneath
     placeholder.classList.add('hidden');
 
-    // Load and play video with highest quality
-    player.loadVideoById({
-        videoId: videoId,
-        suggestedQuality: 'highres'  // Request highest quality (4K/1440p/1080p)
-    });
+    // Load and play video (quality will be set by onPlayerStateChange handler)
+    player.loadVideoById(videoId);
 
     // Update current URL display
     currentUrlElement.textContent = url;
